@@ -44,7 +44,7 @@ const signup = async (req, res) => {
     }
 }
 
-const login = async (req,res) => {
+const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
