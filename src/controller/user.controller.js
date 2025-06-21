@@ -92,8 +92,13 @@ const admin = async (req, res) => {
 
     try {
         const user = await User.findById(userId);
+
+        if (!user)
+        {
+            return res.status(404).json({message: 'User cannot be found'});
+        }
         user.isAdmin = true;
-        user.save()
+        user.save();
 
         return res.status(200).json({message: 'User made admin successful', user});
     } catch (error) {
@@ -108,6 +113,48 @@ const admin = async (req, res) => {
     }
 }
 
+const changePassword = async (req, res) => {
+    const { previousPassword, userId } = req.query;
+
+    try {
+        const user = await User.findById(userId);
+        const isPreviousPasswordValid = await bcrypt.compare(previousPassword, user.password);
+
+        if (!isPreviousPasswordValid)
+        {
+            return res.status(401).json({message: 'Incorrect previous password'});
+        }
+
+        const { newPassword } = req.body;
+
+        if (!newPassword)
+        {
+            return res.status(400).json({message: 'All fields are required'});
+        }
+
+        if (newPassword.length < 6)
+        {
+            return res.status(400).json({message: 'Minimum 6 characters for password'});
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+        user.password = hashedNewPassword;
+        await user.save();
+
+        return res.status(200).json({message: 'Password changed successfully'});
+
+    } catch (error) {
+        console.error('error changing password', error);
+
+        return res.status(500).json({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "Unexpected error occured. Please try again later"
+            }
+        })
+    }
+}
+
 module.exports = {
-    signup, login, admin
+    signup, login, admin, changePassword
 }

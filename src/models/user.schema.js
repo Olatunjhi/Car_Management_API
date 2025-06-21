@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema({
         trim: true,
         minlength: 6
     },
+    newPassword: {
+        type: String,
+        require: true,
+        trim: true,
+        minlength: 6
+    },
     isAdmin: {
         type: Boolean,
         default: false
