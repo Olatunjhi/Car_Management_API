@@ -114,27 +114,36 @@ const admin = async (req, res) => {
 }
 
 const changePassword = async (req, res) => {
-    const { previousPassword, userId } = req.query;
+    const { previousPassword, newPassword, comfirmedPassword } = req.body;
+    const { userId } = req.params;
 
     try {
+        if (!previousPassword || !newPassword || !comfirmedPassword)
+        {
+            return res.status(404).json({message: 'All fields are required'});
+        }
+
         const user = await User.findById(userId);
         const isPreviousPasswordValid = await bcrypt.compare(previousPassword, user.password);
 
         if (!isPreviousPasswordValid)
         {
-            return res.status(401).json({message: 'Incorrect previous password'});
-        }
-
-        const { newPassword } = req.body;
-
-        if (!newPassword)
-        {
-            return res.status(400).json({message: 'All fields are required'});
+            return res.status(400).json({message: 'Previous password incorrect'});
         }
 
         if (newPassword.length < 6)
         {
-            return res.status(400).json({message: 'Minimum 6 characters for password'});
+            return res.status(400).json({message: 'Minimum of 6 characters for password'});
+        }
+
+        if (newPassword !== comfirmedPassword)
+        {
+            return res.status(400).json({message: 'New password and comfirmed password do not match'});
+        }
+
+        if (newPassword == previousPassword)
+        {
+            return res.status(400).json({message: 'Previous password can not be new password'});
         }
 
         const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
@@ -155,6 +164,104 @@ const changePassword = async (req, res) => {
     }
 }
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user)
+        {
+            return res.status(404).json({message: 'User does not exist'});
+        }
+
+        const otp = await Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp
+        await user.save();
+
+        return res.status(200).json({message: 'OTP generated successful', otp});
+
+    } catch (error) {
+        console.error('error forgotting password', error);
+        return res.status(500).json({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occured. Please try again."
+            }
+        })
+    }
+}
+
+const verifyOtp = async (req, res) => {
+    const { otp } = req.body;
+
+    try {
+        const user = await User.findOne({ otp });
+
+        if (otp !== user.otp)
+        {
+            return res.status(400).json({message: 'Invalid OTP!'});
+        }
+
+        user.isOtpVerified = true;
+        user.otp = null;
+        await user.save();
+
+        return res.status(200).json({message: 'You can now set a new password'});
+
+    } catch (error) {
+        console.error('error verifying otp', error);
+        return res.status(500).json({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occured. Please try again later."
+            }
+        })
+    }
+}
+
+const resetPassword = async (req, res) => {
+    const { newPassword, comfirmedPassword } = req.body;
+    const { userId } = req.params;
+    if (!newPassword || !comfirmedPassword)
+    {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+
+    try {
+        if (newPassword !== comfirmedPassword)
+        {
+            return res.status(400).json({message: 'Password does not matched'});
+        }
+
+        const user = await User.findById(userId);
+        if (!user)
+        {
+            return res.status(404).json({message: 'User does not exist'});
+        }
+
+        if (user.isOtpVerified !== true)
+        {
+            return res.status(401).json({message: 'OTP failed to verified'});
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        user.password = hashedPassword;
+        user.isOtpVerified = false;
+        await user.save();
+
+        return res.status(201).json({message: 'Reset password successfully'});
+        
+    } catch (error) {
+        console.error('error resetting password', error);
+        return res.status(500).json({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occured. Please try again later."
+            }
+        })
+    }
+}
+
 module.exports = {
-    signup, login, admin, changePassword
+    signup, login, admin, changePassword, forgotPassword, verifyOtp, resetPassword
 }
