@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUND);
-const jwtScrect = process.env.JWT_SCRECT;
+const jwtSecret = process.env.JWT_SECRET;
 const jwtExpiration = process.env.JWT_EXPIRATION;
 
 const signup = async (req, res) => {
@@ -72,7 +72,7 @@ const login = async (req, res) => {
             email: userExists.email
         }
 
-        const token = await jwt.sign({payload}, jwtScrect, { expiresIn: jwtExpiration});
+        const token = await jwt.sign(payload, jwtSecret, { expiresIn: jwtExpiration});
 
         return res.status(200).json({message: 'User login successfully', userExists, token});
 

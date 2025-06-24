@@ -1,11 +1,11 @@
-const { Jwt } = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 
 dotenv.config();
-const jwtScrect = process.env.JWT_SCRECT
+const jwtSecret = process.env.JWT_SECRET
 
 const isAuthentication = async (req, res, next) => {
-    const autHeader = req.headers.authorisation;
+    const autHeader = req.headers.authorization;
 
     try {
         if (!autHeader)
@@ -19,19 +19,20 @@ const isAuthentication = async (req, res, next) => {
             return res.status(401).json({message: 'Authentication failed!. Authentication token missing'});
         }
 
-        const decoded = await Jwt.verify(token, jwtScrect);
+        const decoded = await jwt.verify(token, jwtSecret);
         if (!decoded)
         {
             return res.status(401).json({message: 'Authentication failed to decoded'});
         }
 
         req.user = decoded;
+        console.log(req.user);
         next();
     } catch (error) {
         console.error('Authenticating error', error);
         return res.status(500).json({
             "error": {
-                "code": "INTERNAL_SERVAL_ERROR",
+                "code": "INTERNAL_SERVER_ERROR",
                 "message": "An unexcepted error occured. Please try again later."
             }
         })
