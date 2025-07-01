@@ -1,5 +1,6 @@
 const Car = require("../models/car.schema");
 const User = require("../models/user.schema");
+const pagination = require("../utils/car.pignation");
 
 const addCar = async (req, res) => {
     const { make, model, year, price, colour, brand, description } = req.body;
@@ -74,9 +75,10 @@ const editCar = async (req, res) => {
 }
 
 const getAllCars = async (req, res) => {
+    const { page, limit, skip } = pagination(req.query);
     try {
-        const cars = await Car.find();
-        return res.status(200).json({message: 'All available cars :', cars});
+        const cars = await Car.find().select('make model year price colour brand').skip(skip).limit(limit);
+        return res.status(200).json({page, message: 'All available cars :', cars});
 
     } catch (error) {
         console.error('error getting all cars', error);
