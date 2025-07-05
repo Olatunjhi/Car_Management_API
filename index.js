@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 app.get('/', (res, req) => {
-  return res.send("Welcome To home page");
+   res.send("Welcome To home page");
 })
 
 app.use('/api/user', userRouter);
