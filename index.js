@@ -13,9 +13,9 @@ const port = process.env.PORT;
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/', (res, req) => {
-   res.send('Welcome To home page');
-})
+app.get('/', (req, res) => {
+    return res.send('Welcome To home page');
+});
 
 app.use('/api/user', userRouter);
 app.use('/api/car', carRouter);
