@@ -1,7 +1,7 @@
 const Car = require("../models/car.schema");
 
 exports.rentCar = async (req, res) => {
-    const carId = req.params;
+    const carId = req.params.carId;
     const userId = req.user.id;
     const { startdate, enddate, rentprice } = req.body;
 
