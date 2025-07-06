@@ -26,10 +26,11 @@ exports.rentCar = async (req, res) => {
         car.endDate = enddate;
         car.rentPrice = rentprice;
         car.rentedBy = userId;
-        car.status = 'pending...';
-        car.save();
+        car.status = 'completed';
+        car.isRented = true;
+        await car.save();
 
-        return res.status(200).json({message: "Your request is on process", car});
+        return res.status(201).json({message: "car rent successfully", car});
 
     } catch (error) {
         console.error("error renting car", error);
