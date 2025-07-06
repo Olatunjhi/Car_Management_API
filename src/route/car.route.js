@@ -10,6 +10,6 @@ router.post('/add', isAuthentication, addCar);
 router.patch('/edit/:carId', isAuthentication, editCar);
 router.delete('/delete/:carId', isAuthentication, deleteCar);
 
-router.post('/rent/:carId', rentCar);
+router.post('/rent/:carId', isAuthentication, rentCar);
 
 module.exports = router;
