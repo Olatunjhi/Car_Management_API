@@ -26,10 +26,17 @@ const userSchema = new mongoose.Schema({
     otp: {
         type: Number
     },
+    emailToken: {
+        type: String
+    },
     isOtpVerified: {
         type: Boolean,
         default: false
-    }
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
 },
 {
     versionKey: false,
