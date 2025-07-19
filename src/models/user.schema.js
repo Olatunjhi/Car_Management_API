@@ -15,9 +15,22 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        require: true,
-        trim: true,
+        require: function() {
+            return !this.googleId; // Password is required only if googleId is not set
+        },
         minlength: 6
+    },
+    avatar: {
+        type: String,
+    },
+    googleId: {
+        type: String,
+        unique: true
+    },
+    provider: {
+        type: String,
+        enum: ['google', 'local'],
+        default: 'local'
     },
     isAdmin: {
         type: Boolean,
