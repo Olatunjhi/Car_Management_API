@@ -5,7 +5,6 @@ const pagination = require("../utils/car.pignation");
 const addCar = async (req, res) => {
     const { make, model, year, price, colour, brand, description } = req.body;
     const id = req.user.id;
-    console.log(id);
 
     try {
         if (!make || !model || !year || !price || !colour || !brand || !description)
