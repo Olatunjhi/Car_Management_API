@@ -9,6 +9,8 @@ const passwordResetMailTemplate = require('../utils/passwordResetMailTemplate');
 const signupMailTemplate = require('../utils/signupMailTemplate');
 const emailVerifySuccess = require('../utils/verifyEmailMailTemplate');
 const passwordChangeMailTemplate = require('../utils/passwordChangeMailTemplate');
+const emailChangeMailTemplate = require("../utils/emailChangeMailTemplate");
+const { deleteImage } = require("../conf/cloudinary");
 
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUND);
@@ -402,6 +404,191 @@ const resetPassword = async (req, res) => {
     }
 }
 
+const uploadProfileImage = async (req, res) => {
+    try {
+        const getPics = req.file;
+        if (!getPics)
+        {
+            return res.status(400).json({message: 'Please upload a profile image'});
+        }
+
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('userProfilePics avatar');
+        if (!user)
+        {
+            return res.status(404).json({message: 'User not found'});
+        }
+
+        if (user.userProfilePics?.publicId)
+        {
+           try {
+                await deleteImage(user.userProfilePics.publicId);
+           } catch (error) {
+                console.error('Error deleting old profile image:', error);
+                return res.status(500).json({ message: 'Failed to delete old profile image' });
+           }
+        }
+
+        user.userProfilePics = {
+            url: getPics.path,
+            publicId: getPics.filename,
+            updatedAt: new Date()
+        };
+
+        user.avatar = getPics.path; // Update avatar field with the new image URL
+        await user.save();
+
+        return res.status(200).json({
+            message: 'Profile image uploaded successfully',
+            user: {
+                avatar: user.userProfilePics.url,
+                publicId: user.userProfilePics.publicId,
+                updatedAt: user.userProfilePics.updatedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error uploading profile image:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+const getUserProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('-password -otp -emailToken -isOtpVerified');
+        if (!user)
+        {
+            return res.status(404).json({message: 'User not found'});
+        }
+        return res.status(200).json({
+            message: 'User profile retrieved successfully',
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                isEmailVerified: user.isEmailVerified,
+                isAdmin: user.isAdmin,
+                userProfilePics: user.userProfilePics,
+                Provider: user.provider
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving user profile:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+const deleteProfileImage = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('userProfilePics avatar');
+        if (!user)
+        {
+            return res.status(404).json({message: 'User not found'});
+        }
+
+        if (!user.userProfilePics?.publicId)
+        {
+            return res.status(400).json({message: 'No profile image to delete'});
+        }
+
+        // Delete the image from cloud storage
+        try {
+            await deleteImage(user.userProfilePics.publicId);
+        } catch (error) {
+            console.error('Error deleting profile image from cloud:', error);
+            return res.status(500).json({ message: 'Failed to delete profile image' });
+        }
+
+        user.userProfilePics = {
+            url: null,
+            publicId: null,
+            updatedAt: new Date()
+        };
+        user.avatar = null; // Clear the avatar field
+        await user.save();
+
+        return res.status(200).json({message: 'Profile image deleted successfully'});
+    } catch (error) {
+        console.error('Error deleting profile image:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+const updateProfile = async (req, res) => {
+    const { name, email } = req.body;
+    const userId = req.user.id;
+
+    try {
+        if (!name && !email)
+        {
+            return res.status(400).json({message: 'Name or email is required'});
+        }
+
+        const user = await User.findById(userId);
+        if (!user)
+        {
+            return res.status(404).json({message: 'User not found'});
+        }
+
+        const userEmail = user.email;
+
+        // Check if the email is already taken by another user
+        if (email && email !== userEmail) {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({message: 'Email is already taken by another user'});
+            }
+
+            user.email = email; // Update email only if it's different
+            user.isEmailVerified = false; // Reset email verification status
+
+            // Generate a new email token for verification
+            user.emailToken = uuidv4();
+
+            // Send email verification email
+            const mail = emailChangeMailTemplate(user.name || name, user.emailToken);
+            const emailResult = await sendEmail(
+                email,
+                mail.subject,
+                mail.html,
+                mail.text
+            );
+
+            if (!emailResult.success) {
+                return res.status(500).json({message: 'Failed to send email verification email'});
+            }
+        }
+
+        if (name) {
+            user.name = name; // Update name if provided
+        }
+
+        // Save the updated user profile
+        await user.save();
+
+        return res.status(200).json({
+            message: email && email !== userEmail ? 'Profile updated successfuly, Please verify your new email' : 
+            'Profile updated successfully', 
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                isEmailVerified: user.isEmailVerified,
+                userProfile: user.userProfilePics.url
+            }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+
 module.exports = {
-    signup, login, admin, changePassword, forgotPassword, verifyOtp, resetPassword, verifyEmail
+    signup, login, admin, changePassword,
+    forgotPassword, verifyOtp, resetPassword, 
+    verifyEmail, uploadProfileImage, deleteProfileImage,
+    getUserProfile, updateProfile
 }

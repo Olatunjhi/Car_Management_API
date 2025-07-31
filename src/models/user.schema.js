@@ -32,15 +32,31 @@ const userSchema = new mongoose.Schema({
         enum: ['google', 'local'],
         default: 'local'
     },
+    userProfilePics: {
+        url: {
+            type: String,
+            default: null
+        },
+        publicId: {
+            type: String,
+            default: null
+        },
+        updatedAt: {
+            type: Date,
+            default: null
+        }
+    },
     isAdmin: {
         type: Boolean,
         default: false
     },
     otp: {
-        type: Number
+        type: Number,
+        default: null  
     },
     emailToken: {
-        type: String
+        type: String,
+        default: null
     },
     isOtpVerified: {
         type: Boolean,
