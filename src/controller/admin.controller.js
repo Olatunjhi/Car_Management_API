@@ -3,11 +3,11 @@ const User = require("../models/user.schema");
 const pagination = require("../utils/car.pignation");
 
 const addCar = async (req, res) => {
-    const { make, model, year, price, colour, brand, description } = req.body;
+    const { make, model, year, buyPrice, rentPrice, colour, brand, description } = req.body;
     const id = req.user.id;
 
     try {
-        if (!make || !model || !year || !price || !colour || !brand || !description)
+        if (!make || !model || !year || !buyPrice || !colour || !brand || !description)
         {
             return res.status(400).json({message: 'All fields are required'});
         }
@@ -18,9 +18,22 @@ const addCar = async (req, res) => {
             return res.status(401).json({message: 'Only admin can add car'});
         }
 
-        const newCar = new Car({ make, model, year, price, colour, brand });
+        const newCar = new Car({ make, model, year, buyPrice, rentPrice, colour, brand });
         await newCar.save();
-        return res.status(201).json({message: 'New car added successfully'}, newCar);
+        return res.status(201).json({
+            message: 'New car added successfully',
+            car: {
+                id: newCar._id,
+                make: newCar.make,
+                model: newCar.model,
+                year: newCar.year,
+                buyPrice: newCar.buyPrice,
+                rentPrice: newCar.rentPrice,
+                colour: newCar.colour,
+                brand: newCar.brand,
+                description: newCar.description
+            }
+        });
 
     } catch (error) {
         console.error('error adding car', error);

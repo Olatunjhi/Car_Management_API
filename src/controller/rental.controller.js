@@ -1,13 +1,19 @@
 const Car = require("../models/car.schema");
+const Rental = require("../models/rental.schema");
 
 exports.rentCar = async (req, res) => {
     const carId = req.params.carId;
     const userId = req.user.id;
-    const { startdate, enddate, rentprice } = req.body;
+    const { duration } = req.body;
 
-    if (!startdate || !enddate || !rentprice)
+    if (!userId)
     {
-        return res.status(400).json({message: "All feilds are required"});
+        return res.status(401).json({message: "Unauthorized user. Please login to continue"});
+    }
+
+    if (!duration)
+    {
+        return res.status(400).json({message: "Duration is required in days"});
     }
     
     try {
@@ -22,15 +28,29 @@ exports.rentCar = async (req, res) => {
             return res.status(400).json({message: "Car is already rented. check another one"});
         }
 
-        car.startDate = startdate;
-        car.endDate = enddate;
-        car.rentPrice = rentprice;
-        car.rentedBy = userId;
-        car.status = 'completed';
-        car.isRented = true;
-        await car.save();
+        const amount = car.rentPrice * duration;
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + duration);
 
-        return res.status(201).json({message: "car rent successfully", car});
+        const rentalcar = await new Rental({
+            rentedBy: userId,
+            carRented: carId,
+            duration,
+            startDate,
+            endDate,
+            isRented: true,
+            status: 'pending'
+        });
+
+        await rentalcar.save();
+
+        return res.status(201).json({
+            message: "Details of what to know before renting",
+            rentPrice: amount,
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0]
+        });
 
     } catch (error) {
         console.error("error renting car", error);
@@ -42,3 +62,7 @@ exports.rentCar = async (req, res) => {
         })
     }
 }
+
+//exports.carRentCheckoutPayment = async (req, res) => {
+  //  const userId = req.user.id;
+    //const carId = req.params.carId;

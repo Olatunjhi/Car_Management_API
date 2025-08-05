@@ -15,7 +15,7 @@ const carSchema = new mongoose.Schema({
         type: Number,
         require: true
     },
-    price: {
+    buyPrice: {
         type: Number,
         require: true
     },
@@ -45,8 +45,7 @@ const carSchema = new mongoose.Schema({
         require: true
     },
     rentPrice: {
-        type: Number,
-        require: true
+        type: Number
     },
     rentedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -57,11 +56,10 @@ const carSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    status: {
-        type: String,
-        enum: ['pending...', 'completed', 'rejected', 'not-rented'],
-        default: 'not-rented'
-    }
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
 },
 {
     timestamps: true,
