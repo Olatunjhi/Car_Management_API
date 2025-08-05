@@ -18,7 +18,7 @@ const storage = new CloudinaryStorage({
         transformation: [{ 
             width: 500, 
             height: 500, 
-            crop: 'limit',
+            crop: 'fill',
             gravity: 'face', // Optional: focus on the face
             quality: 'auto:good',
             format: 'jpg' // Default format
@@ -33,8 +33,10 @@ const storage = new CloudinaryStorage({
 })
 
 const fileFilter = (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-        return cb(new Error('Only image files are allowed'), false);
+   if (file.mimetype.startsWith('image/')) {
+        cb(null, true); // Accept the file
+    } else {
+        cb(new Error('Only image files are allowed!'), false); // Reject the file
     }
 }
 
@@ -43,7 +45,7 @@ const upload = multer({
     fileFilter: fileFilter,
     limits: { 
         fileSize: 5 * 1024 * 1024 
-    } // Limit file size to 5MB
+    },// Limit file size to 5MB
 })
 
 const deleteImage = async (publicId) => {
@@ -57,5 +59,5 @@ const deleteImage = async (publicId) => {
 }
 
 module.exports = {
-    upload, deleteImage
+    cloudinary, upload, deleteImage
 }

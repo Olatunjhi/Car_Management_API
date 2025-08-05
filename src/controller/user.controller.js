@@ -406,8 +406,8 @@ const resetPassword = async (req, res) => {
 
 const uploadProfileImage = async (req, res) => {
     try {
-        const getPics = req.file;
-        if (!getPics)
+        console.log('Uploaded file:', req.file);
+        if (!req.file)
         {
             return res.status(400).json({message: 'Please upload a profile image'});
         }
@@ -430,12 +430,12 @@ const uploadProfileImage = async (req, res) => {
         }
 
         user.userProfilePics = {
-            url: getPics.path,
-            publicId: getPics.filename,
+            url: req.file.path,
+            publicId: req.file.filename,
             updatedAt: new Date()
         };
 
-        user.avatar = getPics.path; // Update avatar field with the new image URL
+        user.avatar = req.file.path; // Update avatar field with the new image URL
         await user.save();
 
         return res.status(200).json({
