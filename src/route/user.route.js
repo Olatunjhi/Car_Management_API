@@ -27,4 +27,5 @@ router.get('profile/get-profile', isAuthentication, getUserProfile);
 router.patch('profile/update-profile', isAuthentication, updateProfile);
 router.delete('profile/delete-profile-image', isAuthentication, deleteProfileImage);
 
+
 module.exports = router;
