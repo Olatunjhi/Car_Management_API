@@ -1,5 +1,6 @@
 const Car = require("../models/car.schema");
-const Rental = require("../models/rental.schema");
+const Order = require("../models/order.schema");
+const flw = require("../conf/flw");
 
 exports.rentCar = async (req, res) => {
     const carId = req.params.carId;
@@ -33,17 +34,28 @@ exports.rentCar = async (req, res) => {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + duration);
 
-        const rentalcar = await new Rental({
+        const existingInitiatedCarOrder = await Order.findOne({ rentedBy: userId, status: 'pending', carRented: carId });
+        if (existingInitiatedCarOrder)
+        {
+            return res.status(201).json({
+                message: "You have already initiated a car rental order",
+                rentPrice: amount,
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0]
+            });
+        }
+
+        const initiateCarOrder = await new Order({
             rentedBy: userId,
             carRented: carId,
             duration,
             startDate,
             endDate,
-            isRented: true,
+            totalCost: amount,
             status: 'pending'
         });
 
-        await rentalcar.save();
+        await initiateCarOrder.save();
 
         return res.status(201).json({
             message: "Details of what to know before renting",
@@ -63,6 +75,48 @@ exports.rentCar = async (req, res) => {
     }
 }
 
-//exports.carRentCheckoutPayment = async (req, res) => {
-  //  const userId = req.user.id;
-    //const carId = req.params.carId;
+exports.carRentCheckoutPayment = async (req, res) => {
+    const userId = req.user.id;
+    
+    const initiatedOrder = await Order.findOne({ rentedBy: userId, status: 'pending' }).populate('carRented');
+    if (!initiatedOrder)
+    {
+        return res.status(404).json({message: "No pending order found for this user"});
+    }
+
+    try {
+        const tx_ref = `tx_${Date.now()}_${userId}`;
+        initiatedOrder.tx_ref = tx_ref;
+        await initiatedOrder.save();
+
+        const paymentPayload = {
+            tx_ref,
+            amount: initiatedOrder.totalCost,
+            currency: 'NGN',
+            redirect_url: `${process.env.BASE_URL}/api/v1/rental/payment-result`,
+            customer: {
+                email: req.user.email,
+                name: req.user.name
+            },
+            customizations: {
+                title: 'Car Rental Payment',
+                description: `Payment for rental of car ${rent.carRented.name}`,
+            }
+        };
+
+        const response = await flw.PaymentInitiation.payment(paymentPayload);
+
+        return res.status(200).json({
+            message: "Payment initiated successfully",
+            paymentUrl: response.data.link
+        });
+    } catch (error) {
+        console.error("Error initiating payment", error);
+        return res.status(500).json({
+            "error": {
+                "code": "PAYMENT_INITIATION_ERROR",
+                "message": "An error occurred while initiating payment. Please try again later"
+            }
+        });
+    }
+}
