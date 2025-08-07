@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema({
     },
     tx_ref: {
         type: String,
-        required: true,
+        required: true ['Transaction reference is required'],
         unique: true // Ensure each transaction reference is unique
     }
 }, {
