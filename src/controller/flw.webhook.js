@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 const Order = require("../models/order.schema");
 const dotenv = require('dotenv');
+const Car = require("../models/car.schema");
 dotenv.config();
  
 exports.flutterwaveWebhook = async (req, res) => {
     console.log('flutterwave webhook called');
-    
+
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -31,6 +32,7 @@ exports.flutterwaveWebhook = async (req, res) => {
         }
 
         if (event === 'charge.completed') {
+            const userId = data.customer?.id;
             const { tx_ref, status, amount } = data;
 
             if (status !== 'successful') {
@@ -52,6 +54,18 @@ exports.flutterwaveWebhook = async (req, res) => {
                 session.endSession();
                 return res.status(404).json({ message: 'Not Found: Order not found or already completed' });
             }
+
+            const car = await Car.findById(order.carRented).session(session);
+            if (!car) {
+                console.error('Car not found');
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).json({ message: 'Not Found: Car not found' });
+            }
+            car.rentedBy = userId;
+            car.isRented = true;
+            car.isAvailable = false;
+            await car.save({ session });
 
             await session.commitTransaction();
             session.endSession();

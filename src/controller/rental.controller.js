@@ -96,11 +96,12 @@ exports.carRentCheckoutPayment = async (req, res) => {
             redirect_url: `${process.env.BASE_URL}/api/v1/rental/payment-result`,
             customer: {
                 email: req.user.email,
-                name: req.user.name
+                name: req.user.name,
+                id: userId
             },
             customizations: {
                 title: 'Car Rental Payment',
-                description: `Payment for rental of car ${rent.carRented.name}`,
+                description: `Payment for rental of car ${initiatedOrder.carRented.name}`,
             }
         };
 

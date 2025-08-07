@@ -34,16 +34,6 @@ const carSchema = new mongoose.Schema({
         require:true,
         trim: true
     },
-    startDate: {
-        type: Date,
-        trim: true,
-        require: true
-    },
-    endDate: {
-        type: Date,
-        trim: true,
-        require: true
-    },
     rentPrice: {
         type: Number
     },
