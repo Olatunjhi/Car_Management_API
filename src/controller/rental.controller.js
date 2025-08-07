@@ -105,7 +105,7 @@ exports.carRentCheckoutPayment = async (req, res) => {
             }
         };
 
-        const response = await flw.Payment.initiate(paymentPayload);
+        const response = await flw.Standard.initiate(paymentPayload);
 
         return res.status(200).json({
             message: "Payment initiated successfully",
