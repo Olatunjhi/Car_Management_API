@@ -1,6 +1,6 @@
 const Car = require("../models/car.schema");
 const Order = require("../models/order.schema");
-const flw = require("../conf/flw");
+const axios = require("axios");
 
 exports.rentCar = async (req, res) => {
     const carId = req.params.carId;
@@ -109,13 +109,32 @@ exports.carRentCheckoutPayment = async (req, res) => {
             }
         };
 
-        console.log("FLW keys:", Object.keys(flw));
+        const flutterwaveRes = await axios.post(
+            'https://api.flutterwave.com/v3/payments',
+            paymentPayload,
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-        const response = await flw.Standard.initiate(paymentPayload);
+        const paymentUrl = flutterwaveRes.data?.data?.link;
+
+        if (!paymentUrl)
+        {
+            return res.status(500).json({
+                "error": {
+                    "code": "PAYMENT_URL_NOT_FOUND",
+                    "message": "Payment URL could not be generated. Please try again later"
+                }
+            });
+        }
 
         return res.status(200).json({
             message: "Payment initiated successfully",
-            paymentUrl: response.data.link
+            paymentUrl: paymentUrl,
         });
     } catch (error) {
         console.error("Error initiating payment", error);
