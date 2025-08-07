@@ -109,6 +109,8 @@ exports.carRentCheckoutPayment = async (req, res) => {
             }
         };
 
+        console.log("FLW keys:", Object.keys(flw));
+
         const response = await flw.Standard.initiate(paymentPayload);
 
         return res.status(200).json({
