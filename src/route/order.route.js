@@ -4,7 +4,7 @@ const { carRentCheckoutPayment } = require('../controller/rental.controller');
 const { flutterwaveWebhook } = require('../controller/flw.webhook');
 const router = express.Router();
 
-router.get('/rent', isAuthentication, carRentCheckoutPayment);
+router.post('/rent', isAuthentication, carRentCheckoutPayment);
 router.post('/flutterwave-webhook', flutterwaveWebhook);
 
 module.exports = router;
