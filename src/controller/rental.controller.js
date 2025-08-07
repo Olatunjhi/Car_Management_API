@@ -34,7 +34,11 @@ exports.rentCar = async (req, res) => {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + duration);
 
-        const existingInitiatedCarOrder = await Order.findOne({ rentedBy: userId, status: 'pending', carRented: carId });
+        const existingInitiatedCarOrder = await Order.findOneAndUpdate(
+            { rentedBy: userId, status: 'pending', carRented: carId },
+            { startDate, endDate, totalCost: amount },
+            { new: true }
+        );
         if (existingInitiatedCarOrder)
         {
             return res.status(201).json({
