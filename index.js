@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const connectDb = require("./src/conf/db");
 const userRouter = require("./src/route/user.route");
 const carRouter = require("./src/route/car.route");
+const orderRouter = require("./src/route/order.route");
 
 
 dotenv.config();
@@ -11,6 +12,8 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(morgan('dev'));
 
 app.get('/', (req, res) => {
@@ -19,6 +22,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/user', userRouter);
 app.use('/api/car', carRouter);
+app.use('/api/order', orderRouter);
 
 
 app.listen(port, () => {

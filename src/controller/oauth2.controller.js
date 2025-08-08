@@ -135,6 +135,7 @@ const handleGoogleCallback = async (req, res) => {
         const payload = {
             id: user._id,
             email: user.email,
+            name: user.name,
             provider: user.provider,
         }
         const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION });
